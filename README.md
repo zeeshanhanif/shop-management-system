@@ -9,8 +9,8 @@ customer management, and online ordering with delivery.
 ## Shape
 
 A **modular monolith API** (TypeScript) serving two Next.js frontends, on a single
-managed Postgres. Built and run by one person; the north star is **never lose a sale
-or transaction**.
+managed **Supabase** Postgres. Built and run by one person; the north star is **never
+lose a sale or transaction**.
 
 ```
 shop-management-system/
@@ -39,14 +39,15 @@ shop-management-system/
 
 ```bash
 npm install                 # installs all workspaces
-cp .env.example .env         # fill in DATABASE_URL (pooler!), Stripe, email, secrets
+cp .env.example .env         # fill in DATABASE_URL (Supabase pooler!), Stripe, email, secrets
 npm run dev:api              # API on :8080
 npm run dev:admin            # admin portal on :3001
 npm run dev:web              # storefront on :3000
 ```
 
-> `DATABASE_URL` must point at a **connection pooler**, not Postgres directly — Cloud
-> Run + serverless connection fan-out will otherwise exhaust the database (ADR-003).
+> `DATABASE_URL` must be the **Supabase transaction-mode pooler** endpoint (port 6543),
+> not the direct connection — Cloud Run + serverless connection fan-out will otherwise
+> exhaust the database (ADR-003).
 
 ## Non-negotiables baked into the scaffold
 

@@ -2,9 +2,10 @@
  * Database access (see ADR-003).
  *
  * Cloud Run can run many concurrent instances, each opening connections, while
- * Postgres has a low connection ceiling. DATABASE_URL MUST point at a connection
- * pooler (PgBouncer-style, or a provider that bundles one such as Neon/Supabase),
- * not at the database directly. Keep this client pool small per instance.
+ * Postgres has a low connection ceiling. DATABASE_URL MUST point at Supabase's
+ * Supavisor pooler in TRANSACTION mode (port 6543), not the direct database
+ * connection. Transaction pooling means: no session-scoped state across queries
+ * (avoid server-side prepared statements / LISTEN). Keep this client pool small.
  */
 
 import pg from "pg";

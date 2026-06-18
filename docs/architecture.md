@@ -89,9 +89,9 @@ The architecture in a nutshell — each item links to an ADR in section 9:
 - **Modular monolith** — a single deployable API with strict internal module boundaries
   aligned to the sub-domains (catalog/inventory, customers, orders, billing, payments,
   POS, fulfillment, notifications, auth). Not microservices. *(ADR-002)*
-- **PostgreSQL as the single system of record** — managed, with a connection pooler in
-  front to survive Cloud Run's serverless connection fan-out. ACID transactions are the
-  backbone of transactional integrity. *(ADR-003)*
+- **PostgreSQL as the single system of record** — managed on **Supabase**, whose built-in
+  Supavisor pooler absorbs Cloud Run's serverless connection fan-out with nothing extra to
+  run. ACID transactions are the backbone of transactional integrity. *(ADR-003)*
 - **Synchronous REST, with Cloud Tasks for async side-effects** — no standing message
   broker. Background work (emails, post-payment processing) is pushed as HTTP tasks to
   the same API. *(ADR-004)*
@@ -118,8 +118,8 @@ graph TB
         site["Customer Website<br/>[Next.js on Vercel]"]
         admin["Admin Portal<br/>[Next.js on Vercel]"]
         api["API Service<br/>[Node.js/TS on Cloud Run]<br/>all domain logic"]
-        pool["Connection Pooler<br/>[PgBouncer-style]"]
-        db[("PostgreSQL<br/>system of record")]
+        pool["Supavisor Pooler<br/>[Supabase, built-in]"]
+        db[("PostgreSQL<br/>[Supabase] · system of record")]
         tasks["Cloud Tasks<br/>async job queue"]
     end
 
@@ -171,9 +171,12 @@ graph TB
   - `auth` — staff and customer identity, sessions, RBAC.
   - A thin `shared` kernel for money, IDs, and cross-cutting types. Modules call each
     other through explicit interfaces, never by reaching into each other's tables.
-- **Connection Pooler** — multiplexes Cloud Run's many short-lived connections down to a
-  bounded set the database can handle (see ADR-003).
-- **PostgreSQL** — the single system of record for every entity.
+- **Supavisor Pooler (Supabase, built-in)** — multiplexes Cloud Run's many short-lived
+  connections down to a bounded set the database can handle. Bundled with Supabase, so it is
+  configuration, not infrastructure to operate (see ADR-003). The API connects through its
+  **transaction-mode** pooler endpoint.
+- **PostgreSQL (Supabase)** — the single system of record for every entity. Standard
+  Postgres, so nothing about the data layer is Supabase-proprietary.
 - **Cloud Tasks** — managed, scale-to-zero queue for deferred work (emails, post-payment
   reconciliation). Pushes back to the API over HTTPS, so there is no separate worker
   process to operate.
@@ -272,9 +275,9 @@ graph TB
         sm["Secret Manager"]
     end
 
-    subgraph data["Managed Postgres"]
-        pool["Connection Pooler"]
-        pg[("PostgreSQL + automated backups")]
+    subgraph data["Supabase (managed Postgres)"]
+        pool["Supavisor pooler<br/>(transaction mode)"]
+        pg[("PostgreSQL + PITR backups")]
     end
 
     stripe["Stripe"]
@@ -296,10 +299,11 @@ graph TB
 - **Scaling:** Cloud Run scales to zero when idle and out under load — appropriate for a
   single shop's spiky, mostly-low traffic. A minimum-instance of 0–1 keeps cost near zero;
   raise the floor if cold starts ever bother the counter.
-- **Secrets:** Stripe keys, DB credentials, email keys in **Secret Manager**, injected as
-  env vars — never in source or in the frontends.
-- **Networking:** all traffic HTTPS. The database is reachable only by the API (private
-  connectivity / authorized networks), never by the frontends or the public internet.
+- **Secrets:** Stripe keys, the Supabase database URL + service credentials, and email keys
+  in **Secret Manager**, injected as env vars — never in source or in the frontends.
+- **Networking:** all traffic HTTPS. Only the API holds the Supabase credentials; the
+  frontends never talk to the database directly. Tighten further with Supabase network
+  restrictions / SSL-enforced connections.
 
 ## 8. Cross-cutting Concepts
 
@@ -316,15 +320,17 @@ graph TB
   reconstruct later, and directly supports the integrity goal.
 
 **Data**
-- **PostgreSQL** is the single system of record (ADR-003). Relational, transactional, with
-  JSONB available for the occasional semi-structured field — no second store needed.
+- **PostgreSQL on Supabase** is the single system of record (ADR-003). Relational,
+  transactional, with JSONB available for the occasional semi-structured field — no second
+  store needed.
 - **Money is stored as integer minor units** (e.g. cents) with an explicit currency, never
   as floats (ADR-009). All arithmetic in integer space.
 - Schema evolves through **versioned migrations** checked into the repo (e.g. Prisma
   Migrate / Drizzle), applied in CI before the new API revision takes traffic.
-- **Backups:** managed Postgres point-in-time recovery. Target **RPO ≤ 5 min, RTO ≤ 1
-  hour** — generous for a single shop and met by the managed provider's defaults. Verify
-  restores periodically; an untested backup is not a backup.
+- **Backups:** Supabase **point-in-time recovery (PITR)** plus daily backups. Target
+  **RPO ≤ 5 min, RTO ≤ 1 hour** — generous for a single shop and met by Supabase's defaults
+  (confirm PITR is enabled on the chosen plan). Verify restores periodically; an untested
+  backup is not a backup.
 
 **Resilience and error handling**
 - **Idempotency** on the two paths where double-execution costs money: client-supplied
@@ -413,7 +419,7 @@ keeps a future extraction cheap if the shop ever grows into a chain.
 
 ---
 
-### ADR-003: PostgreSQL as the single system of record, with a connection pooler
+### ADR-003: Supabase-managed PostgreSQL as the single system of record
 
 **Status:** Accepted · **Date:** 2026-06-18
 
@@ -421,27 +427,36 @@ keeps a future extraction cheap if the shop ever grows into a chain.
 The data is highly relational (products, stock, customers, orders, line items, invoices,
 payments) and the system must guarantee transactional integrity over money and stock. The
 API runs on Cloud Run, which can spawn many concurrent instances, each opening database
-connections — and Postgres has a low connection ceiling.
+connections — and Postgres has a low connection ceiling, so a pooler is mandatory, not
+optional.
 
 **Decision**
-We will use a **single managed PostgreSQL** database as the system of record, fronted by a
-**connection pooler** (PgBouncer-style). A provider with a built-in pooler (e.g. Neon or
-Supabase) is preferred to minimize ops; Cloud SQL + a pooler is the alternative.
+We will use a **single managed PostgreSQL database on Supabase** as the system of record,
+connecting through Supabase's **built-in Supavisor pooler in transaction mode**. There is no
+separately operated pooler.
 
 **Options considered**
-- **Managed Postgres + pooler (chosen)** — ACID transactions, joins, mature ecosystem, and
-  the pooler solves the serverless connection-fan-out problem. Con: one more piece (the
-  pooler) — eliminated if the provider bundles it.
-- **NoSQL/document store** — easy horizontal scale, but no multi-document ACID transactions
-  in the shape we need, and our data is relational. Rejected: fights goal 1.
+- **Supabase (chosen)** — managed Postgres with a **bundled connection pooler**, PITR
+  backups, and a free/low-cost tier that fits a single shop; removes the one extra moving
+  part (a self-run PgBouncer). It is standard Postgres, so the data layer stays portable.
+  Con: GCP and the database then live with different vendors (acceptable; latency between
+  Cloud Run and a nearby Supabase region is small — co-locate regions).
+- **Cloud SQL for Postgres + a pooler** — GCP-native and same-cloud as the API, but the pooler
+  is something to stand up and operate, and there is no free tier. Lost on solo-simplicity and
+  cost; the bundled-pooler convenience of Supabase won.
+- **NoSQL/document store** — easy horizontal scale, but no multi-document ACID transactions in
+  the shape we need, and our data is relational. Rejected: fights goal 1.
 - **Cloud Run direct to Postgres, no pooler** — simplest until traffic spikes exhaust
   connections and checkouts start failing. Rejected as a latent outage.
 
 **Consequences**
-Strong consistency for the operations that matter, with a familiar query model. We accept
-running (or paying a provider for) a pooler, and we must treat the connection limit as a real
-budget. A single primary is a scaling ceiling far above this shop's needs; read replicas can
-be added later without app changes.
+Strong consistency for the operations that matter, a familiar query model, and zero pooler
+ops. We accept a two-vendor setup (Cloud Run on GCP, database on Supabase) — mitigated by
+choosing nearby regions — and must use the **transaction-mode pooler endpoint** from Cloud
+Run (so code avoids session-level features incompatible with transaction pooling, e.g.
+long-lived prepared statements / `LISTEN`). Because it is standard Postgres, migrating to
+Cloud SQL later is a `pg_dump`/restore, not a rewrite. A single primary is a scaling ceiling
+far above this shop's needs; Supabase read replicas can be added later without app changes.
 
 ---
 
@@ -557,8 +572,10 @@ control** on the staff side gating money- and stock-affecting actions. Sessions 
   for a tiny staff. Con: two login flows to build.
 - **Single user table with a role flag** — fewer moving parts, but one bug could expose admin
   capability to a customer account; muddier audit story. Rejected on security.
-- **Managed external auth (Clerk/Auth0)** — offloads auth entirely, but adds cost and a
-  dependency for needs a library covers fine at this scale. Reasonable future option, not now.
+- **Managed external auth (Supabase Auth / Clerk/Auth0)** — offloads auth entirely. Since the
+  database already lives on Supabase, **Supabase Auth** is the lowest-friction managed option
+  (especially for the customer realm) and a natural future escape hatch. Adds a dependency for
+  needs a library covers fine at this scale, so not adopted now — but the closest upgrade path.
 
 **Consequences**
 Customer and staff capabilities are cleanly separated and auditable. We accept building and
@@ -590,10 +607,10 @@ email, storage) sit behind thin interfaces; the domain modules depend on the int
   later migration becomes a rewrite. Rejected as needless lock-in.
 
 **Consequences**
-We move fast and run almost nothing ourselves. Postgres and the domain logic are the portable
-heart; the managed conveniences around them (Cloud Run, Cloud Tasks, Vercel) are replaceable
-with contained effort. We accept GCP/Vercel/Stripe coupling at the edges as a conscious,
-bounded cost.
+We move fast and run almost nothing ourselves. Postgres (on Supabase, but standard Postgres)
+and the domain logic are the portable heart; the managed conveniences around them (Cloud Run,
+Cloud Tasks, Vercel, Supabase) are replaceable with contained effort. We accept
+GCP/Vercel/Stripe/Supabase coupling at the edges as a conscious, bounded cost.
 
 ---
 
@@ -639,9 +656,11 @@ edges and must enforce the convention consistently (a `Money` type in the shared
   per the stated reliable-connectivity assumption. If outages prove real, revisit with a
   local-first POS — a significant change, deliberately deferred. The clean `pos` module
   boundary is what keeps that door open.
-- **Single database, single region.** A regional outage or a corrupting bug takes the system
-  down until recovery. Acceptable for one shop given the RTO target; mitigated by managed
-  backups and PITR. Read replicas / multi-region are future options, not launch needs.
+- **Single database, single region.** An outage of the Supabase region or a corrupting bug
+  takes the system down until recovery. Acceptable for one shop given the RTO target;
+  mitigated by Supabase PITR and daily backups. Read replicas / multi-region are future
+  options, not launch needs. (Co-locate the Supabase region with the Cloud Run region to keep
+  query latency low.)
 - **Solo bus factor.** One person holds all the context. Mitigation: this document, the ADRs,
   versioned migrations, and disciplined module boundaries — so a second engineer (or future
   self) can onboard.
