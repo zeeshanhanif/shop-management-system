@@ -1,0 +1,26 @@
+{
+  "name": "@shop/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/server.js",
+  "scripts": {
+    "dev": "node --watch --experimental-strip-types src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "typecheck": "tsc --noEmit",
+    "migrate": "node --experimental-strip-types src/db/migrate.ts"
+  },
+  "dependencies": {
+    "@shop/shared": "*",
+    "fastify": "^5.0.0",
+    "pg": "^8.13.0",
+    "stripe": "^17.0.0",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/pg": "^8.11.0",
+    "typescript": "^5.6.0"
+  }
+}

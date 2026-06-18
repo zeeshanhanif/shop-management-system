@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "software-architecture": {
+      "source": "zeeshanhanif/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/software-architecture/SKILL.md",
+      "computedHash": "0d4974da82b354d130f06b78b0453b387aab49ce17d41da95ca2119ac64d7c2e"
+    }
+  }
+}

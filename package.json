@@ -1,0 +1,21 @@
+{
+  "name": "shop-management-system",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Single-shop retail management system: API + admin portal + customer website",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev:api": "npm run dev --workspace apps/api",
+    "dev:admin": "npm run dev --workspace apps/admin",
+    "dev:web": "npm run dev --workspace apps/web",
+    "build": "npm run build --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
