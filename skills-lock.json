@@ -1,11 +1,23 @@
 {
   "version": 1,
   "skills": {
+    "implementation-planning": {
+      "source": "zeeshanhanif/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/implementation-planning/SKILL.md",
+      "computedHash": "f2cd90d2f0fe994b139d55a5e687ae76e1a12116798ba128d39b0e55d5b7a889"
+    },
     "software-architecture": {
       "source": "zeeshanhanif/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/software-architecture/SKILL.md",
       "computedHash": "0d4974da82b354d130f06b78b0453b387aab49ce17d41da95ca2119ac64d7c2e"
+    },
+    "ux-foundations": {
+      "source": "zeeshanhanif/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/ux-foundations/SKILL.md",
+      "computedHash": "c7b790b9c79b598c6ab161fbcab5349f89f183f0298347d1f95467efd2d23109"
     }
   }
 }

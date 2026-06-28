@@ -1,0 +1,236 @@
+/*
+ * Shop Management System — Design Tokens (shared core)
+ * Source of truth: docs/ux-foundations.md (Part A3).
+ *
+ * One core, inherited by every surface. Import this ONCE per app, before any
+ * component styles, in both apps/admin and apps/web:
+ *
+ *     import "@shop/shared/styles/tokens.css";
+ *
+ * Tokens are semantic ROLES (not raw colors), so a dark theme can be added later
+ * as an alternate value set without renaming anything (see [data-theme] block).
+ * Light theme + English/LTR only at launch.
+ */
+
+:root {
+  /* ----------------------------------------------------------------------- */
+  /* Color — semantic roles (light theme). Contrast notes are vs the bg they  */
+  /* are intended to sit on; all meet WCAG 2.2 AA.                            */
+  /* ----------------------------------------------------------------------- */
+  --bg: #f8fafc;              /* app background */
+  --surface: #ffffff;         /* cards, panels, tables */
+  --surface-muted: #f1f5f9;   /* subtle fills, table header, hover rows */
+
+  --text: #0f172a;            /* primary text — 16:1 on --surface */
+  --text-muted: #475569;      /* secondary text — 7.5:1 on --surface */
+  --border: #e2e8f0;          /* hairline borders, dividers */
+
+  --primary: #1d4ed8;         /* brand / interactive */
+  --primary-hover: #1e40af;   /* hover + active */
+  --primary-fg: #ffffff;      /* on --primary — 5.9:1 */
+
+  --secondary: #475569;       /* neutral secondary actions */
+  --secondary-fg: #ffffff;    /* on --secondary — 7:1 */
+
+  /* State colors + their subtle background pairs (for status pills/alerts).  */
+  --success: #15803d;
+  --success-subtle: #dcfce7;
+  --warning: #b45309;
+  --warning-subtle: #fef3c7;
+  --danger: #b91c1c;
+  --danger-subtle: #fee2e2;
+  --info: #0e7490;
+  --info-subtle: #cffae3;
+  --on-state: #ffffff;        /* text/icon on a solid state color */
+
+  --focus-ring: #2563eb;      /* always-visible focus outline */
+
+  /* ----------------------------------------------------------------------- */
+  /* Order-status pill map — the FIXED mapping from ux-foundations A6.        */
+  /* Components map an OrderStatus to one of these {bg,fg} pairs.             */
+  /* ----------------------------------------------------------------------- */
+  --status-pending-bg: var(--warning-subtle);    /* pending_payment, awaiting_cod */
+  --status-pending-fg: #92400e;
+  --status-paid-bg: var(--success-subtle);       /* paid */
+  --status-paid-fg: #166534;
+  --status-progress-bg: var(--info-subtle);      /* packing, out_for_delivery */
+  --status-progress-fg: #155e63;
+  --status-delivered-bg: var(--success);         /* delivered (solid) */
+  --status-delivered-fg: var(--on-state);
+  --status-cancelled-bg: var(--surface-muted);   /* cancelled (muted) */
+  --status-cancelled-fg: var(--text-muted);
+  --status-returned-bg: var(--warning-subtle);   /* returned */
+  --status-returned-fg: #92400e;
+  --status-refunded-bg: var(--danger-subtle);    /* refunded */
+  --status-refunded-fg: #991b1b;
+
+  /* ----------------------------------------------------------------------- */
+  /* Typography                                                               */
+  /* ----------------------------------------------------------------------- */
+  --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --text-xs: 0.75rem;    --leading-xs: 1rem;       /* 12 / 16 */
+  --text-sm: 0.875rem;   --leading-sm: 1.25rem;    /* 14 / 20 */
+  --text-base: 1rem;     --leading-base: 1.5rem;   /* 16 / 24 */
+  --text-lg: 1.125rem;   --leading-lg: 1.75rem;    /* 18 / 28 */
+  --text-xl: 1.25rem;    --leading-xl: 1.75rem;    /* 20 / 28 */
+  --text-2xl: 1.5rem;    --leading-2xl: 2rem;      /* 24 / 32 */
+  --text-3xl: 1.875rem;  --leading-3xl: 2.25rem;   /* 30 / 36 */
+
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+
+  /* Per-surface overridable base size (admin denser, web larger) */
+  --font-size-base: 1rem;     /* 16px default; admin overrides to 14px */
+
+  /* ----------------------------------------------------------------------- */
+  /* Spacing — 4px base scale (gaps in the scale are intentional)             */
+  /* ----------------------------------------------------------------------- */
+  --space-1: 0.25rem;   /* 4 */
+  --space-2: 0.5rem;    /* 8 */
+  --space-3: 0.75rem;   /* 12 */
+  --space-4: 1rem;      /* 16 */
+  --space-5: 1.25rem;   /* 20 */
+  --space-6: 1.5rem;    /* 24 */
+  --space-8: 2rem;      /* 32 */
+  --space-10: 2.5rem;   /* 40 */
+  --space-12: 3rem;     /* 48 */
+  --space-16: 4rem;     /* 64 */
+
+  /* ----------------------------------------------------------------------- */
+  /* Radius, elevation, borders                                               */
+  /* ----------------------------------------------------------------------- */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-full: 9999px;
+
+  --shadow-sm: 0 1px 2px 0 rgb(15 23 42 / 0.06);
+  --shadow-md: 0 4px 8px -2px rgb(15 23 42 / 0.10), 0 2px 4px -2px rgb(15 23 42 / 0.06);
+  --shadow-lg: 0 12px 24px -6px rgb(15 23 42 / 0.14), 0 4px 8px -4px rgb(15 23 42 / 0.08);
+
+  --border-width: 1px;
+
+  /* ----------------------------------------------------------------------- */
+  /* Iconography (Lucide) — defaults                                          */
+  /* ----------------------------------------------------------------------- */
+  --icon-stroke: 1.5;
+  --icon-sm: 16px;
+  --icon-md: 20px;
+  --icon-lg: 24px;
+
+  /* ----------------------------------------------------------------------- */
+  /* Motion                                                                   */
+  /* ----------------------------------------------------------------------- */
+  --duration-fast: 120ms;
+  --duration-base: 180ms;
+  --duration-slow: 240ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* ----------------------------------------------------------------------- */
+  /* Accessibility                                                            */
+  /* ----------------------------------------------------------------------- */
+  --focus-ring-width: 2px;
+  --focus-ring-offset: 2px;
+  --min-target: 24px;   /* WCAG 2.2 floor; web surface overrides to 44px */
+}
+
+/* ------------------------------------------------------------------------- */
+/* Surface overrides — apply via a wrapper attribute on each app's <html>     */
+/* or root layout:  <html data-surface="admin">  /  data-surface="web">       */
+/* Only density / target-size diverge; palette, type families, radii stay.    */
+/* ------------------------------------------------------------------------- */
+[data-surface="admin"] {
+  --font-size-base: 0.875rem;  /* 14px — denser for data-heavy staff tooling */
+  --row-density: var(--space-2);
+}
+
+[data-surface="web"] {
+  --font-size-base: 1rem;      /* 16px */
+  --min-target: 44px;          /* thumb-friendly touch targets */
+  --row-density: var(--space-4);
+}
+
+/* ------------------------------------------------------------------------- */
+/* Minimal base layer — immediately usable defaults built from the tokens.    */
+/* ------------------------------------------------------------------------- */
+body {
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: var(--font-size-base);
+  line-height: var(--leading-base);
+}
+
+/* Money, quantities, SKUs, order numbers — tabular mono everywhere. */
+.tabular,
+[data-numeric] {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Always-visible focus (never remove without replacing). */
+:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+/* ------------------------------------------------------------------------- */
+/* Reduced motion — honor the OS preference (ux-foundations A5).              */
+/* ------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-fast: 0.01ms;
+    --duration-base: 0.01ms;
+    --duration-slow: 0.01ms;
+  }
+}
+
+/* ------------------------------------------------------------------------- */
+/* Dark theme — OUT OF SCOPE for launch, scaffolded for later.                */
+/* When ready, override only the role values here; nothing else changes.      */
+/* Activate with <html data-theme="dark"> (or wire to prefers-color-scheme).  */
+/* ------------------------------------------------------------------------- */
+/*
+[data-theme="dark"] {
+  --bg: #0b1220;
+  --surface: #0f172a;
+  --surface-muted: #1e293b;
+  --text: #f1f5f9;
+  --text-muted: #94a3b8;
+  --border: #1e293b;
+  --primary: #3b82f6;
+  --primary-hover: #60a5fa;
+  --primary-fg: #0b1220;
+  ... etc (re-verify AA contrast for the dark set)
+}
+*/
+
+/* ========================================================================= */
+/* shadcn/ui compatibility layer                                             */
+/* shadcn components read --background, --foreground, --primary, --ring, etc. */
+/* Map them to our semantic roles so shadcn/ui themes from this one file.     */
+/* (shadcn/Tailwind read these via hsl()/var(); these direct-color aliases    */
+/*  work with a Tailwind v4 @theme that references var(--color-*).)           */
+/* ========================================================================= */
+:root {
+  --background: var(--bg);
+  --foreground: var(--text);
+  --card: var(--surface);
+  --card-foreground: var(--text);
+  --popover: var(--surface);
+  --popover-foreground: var(--text);
+  --muted: var(--surface-muted);
+  --muted-foreground: var(--text-muted);
+  --primary-foreground: var(--primary-fg);   /* --primary already defined above */
+  --secondary-foreground: var(--secondary-fg);
+  --destructive: var(--danger);
+  --destructive-foreground: var(--on-state);
+  --input: var(--border);
+  --ring: var(--focus-ring);
+  --radius: var(--radius-md);
+}
